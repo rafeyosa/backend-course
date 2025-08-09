@@ -1,46 +1,59 @@
 import express from 'express'
 import db from '../db.js'
+import prisma from '../prismaClient.js'
 
 const router = express.Router()
 
-router.get('/', (req, res) => {
-  const getTodo = db.prepare('SELECT * FROM todo WHERE user_id = ?')
-  const todo = getTodo.all(req.userId)
+router.get('/', async (req, res) => {
+  const todo = prisma.todo.findMany({
+    where: {
+      userId: req.userId,
+    },
+  })
   res.json(todo)
 })
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const { task } = req.body
 
-  const insertTodo = db.prepare(
-    'INSERT INTO todo (user_id, task) VALUES (?, ?)'
-  )
-  const result = insertTodo.run(req.userId, task)
+  const todo = prisma.todo.create({
+    data: {
+      task,
+      userId: req.userId,
+    },
+  })
 
-  res.json({ id: result.lastInsertRowid, task, completes: 0 })
+  res.json(todo)
 })
 
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   const { completed } = req.body
   const { id } = req.params
 
-  const updateTodo = db.prepare(
-    'UPDATE todo SET isComplete = ? WHERE id = ?'
-  )
-  updateTodo.run(completed, id)
+  await prisma.todo.update({
+    where: {
+      id: parseInt(id),
+      userId: req.userId,
+    },
+    data: {
+      isComplete: !!completed,
+    },
+  })
 
-  res.json({ message: "Todo updated" })
+  res.json({ message: 'Todo updated' })
 })
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   const { id } = req.params
 
-  const deleteTodo = db.prepare(
-    'DELETE FROM todo WHERE id = ? AND user_id = ?'
-  )
-  deleteTodo.run(id, req.userId)
+  await prisma.todo.delete({
+    where: {
+      id: parseInt(id),
+      userId: req.userId,
+    },
+  })
 
-  res.json({ message: "Todo deleted" })
+  res.json({ message: 'Todo deleted' })
 })
 
 export default router

@@ -25,9 +25,9 @@ router.put('/:id', (req, res) => {
   const { id } = req.params
 
   const updateTodo = db.prepare(
-    'UPDATE todo SET isComplete = ? WHERE id = ?'
+    'UPDATE todo SET isComplete = ? WHERE id = ? AND user_id = ?'
   )
-  updateTodo.run(completed, id)
+  updateTodo.run(completed, id, req.userId)
 
   res.json({ message: "Todo updated" })
 })
